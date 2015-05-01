@@ -1,0 +1,104 @@
+CREATE OR REPLACE FUNCTION aplicar_asiento(id_documento int)
+RETURNS integer AS $$
+
+DECLARE
+    id_concepto int;
+    id_movimiento int;
+    id_clavefolio int;
+    documento_monto numeric;
+    id_cuentacargo int;
+    id_cuentaabono int;
+    id_sucursal int;
+    id_usuario int;
+    id_doccont int;
+    id_librocontable int;
+    id_asientocontable int;
+    LibroEstatus text;
+    id_librosucursal int;
+    cuenta_tipo text;
+    id_librocuentacontable int;
+    cuenta_saldo numeric;
+    cuenta_nuevosaldo numeric;
+    id_movimientocontable int;
+
+BEGIN
+    -- Extrae informacion del documento a fin de poder determinar el tipo de asiento a realizar
+    EXECUTE 'SELECT "Id_ConceptoDocumento", "Id_DocumentoMovimiento", "Id_ClaveFolio", "Id_Usuario", "Monto" FROM "Documento" WHERE "ID" =' || id_documento INTO id_concepto, id_movimiento, id_clavefolio, id_usuario, documento_monto;
+    -- Selecciona el asiento contable tomando como base el Documento, Concepto y Movimiento
+    EXECUTE 'SELECT "Id_Asiento" FROM "Documento_Asiento" WHERE "Id_ConceptoDocumento" ='|| id_concepto ||', "Id_ClaveFolio" = '|| id_clavefolio ||', "Id_MovimientoDocumento" = '|| id_movimiento INTO id_asientocontable;
+    -- Especificamente para el asiento, obtiene la cuenta de cargo y abono
+    EXECUTE 'SELECT "Id_SubCuentaContableCargo", "Id_SubCuentaContableAbono" FROM "Asiento_Contable" WHERE "Id_AsientoContable" = ' || id_asientocontable INTO id_cuentacargo, id_cuentaabono;
+    -- Obtiene sucursal a fin de generar el documento contable en la sucursal correcta
+    EXECUTE 'SELECT "Id_Sucursal" FROM "Numeracion_Folio" WHERE "Id_ClaveFolio" = ' || id_clavefolio INTO id_sucursal;
+    -- Manda a crear documento contable y obtiene su Id de regreso
+    EXECUTE 'SELECT crear_documento(id_sucursal,''Flujo_Contable'',id_usuario, id_documento)' INTO id_doccont;
+    -- A manera de validacion, busca que exista un registro de libro contable para el anno en curso
+    EXECUTE 'SELECT "ID" FROM "Libro_Contable" WHERE "Anno"= SELECT EXTRACT(ISOYEAR FROM (SELECT LOCALTIMESTAMP))' INTO id_librocontable;
+    -- Se valida el estatus del libro para la sucursal, si se encuentra cerrado se aborta el proceso caso contrario se procede
+    EXECUTE 'SELECT "ID", "Estatus" FROM "Libro_Sucursal" WHERE "Id_LibroContable"= ' || id_librocontable || ' AND "Id_Sucursal"= ' || id_sucursal INTO id_libroSucursal, LibroEstatus;
+    
+    -- Excepcion si se encuentra cerrado
+    IF LibroEstatus = 'C' THEN
+       RAISE EXCEPTION 'DB_ERROR_02 --> %', LibroEstatus;
+    ELSE
+    -- Se continua si no lo esta e inserta el movimiento contable en el libro de la sucursal
+       EXECUTE 'INSERT INTO "Movimiento_Contable"("Id_LibroSucursal", "Id_AsientoContable", "Id_Documento") VALUES ( ' || id_sucursal || ' ,' || id_asientocontable || ', ' || id_documento || ')';
+    -- Selecciona el registro de Movimiento Contable recientemente insertado
+       EXECUTE 'SELECT currval(pg_get_serial_sequence(''Movimiento_Contable'',''ID''))' INTO id_movimientocontable;
+    -- Se consulta el tipo de cuenta contable asociada al cargo a fin de determinar como se afectara el saldo de la cuenta
+       EXECUTE 'SELECT "Tipo" FROM "Cuenta_Contable" WHERE "ID"=' || id_cuentacargo INTO cuenta_tipo;
+    -- Se consulta el Saldo de la cuenta en cuestion para su posterior modificacion
+       EXECUTE 'SELECT "ID", "Saldo" FROM "Libro_CuentaContable" WHERE "Id_LibroSucursal"= ' || id_librosucursal || ' AND "Id_CuentaContable"= ' || id_cuentacargo INTO id_librocuentacontable, cuenta_saldo;
+
+       -- Dependiendo del tipo de cuenta se aumenta o disminuye el saldo
+       CASE cuenta_tipo 
+            WHEN "Activo", "Costos", "Gastos" THEN
+    	       cuenta_nuevosaldo := cuenta_saldo + documento_monto;
+       	    WHEN "Pasivo", "Capital", "Ingresos" THEN
+	       cuenta_nuevosaldo := cuenta_saldo - documento_monto;
+       END CASE;		 
+       EXECUTE 'UPDATE "Libro_CuentaContable" SET "Saldo" = ' || cuenta_nuevosaldo || ' WHERE "ID"=' || id_librocuentacontable;
+       
+       EXECUTE 'SELECT "ID", "Saldo" FROM "Libro_CuentaContable" WHERE "Id_LibroSucursal"=' || id_librosucursal || ' AND "Id_CuentaContable"= ' || id_cuentaabono INTO id_librocuentacontable, cuenta_saldo;
+
+       -- Dependiendo del tipo de cuenta se aumenta o disminuye el saldo
+       CASE cuenta_tipo 
+	    WHEN "Activo", "Costos", "Gastos" THEN
+    	       cuenta_nuevosaldo := cuenta_saldo - documento_monto;
+       	    WHEN "Pasivo", "Capital", "Ingresos" THEN
+	       cuenta_nuevosaldo := cuenta_saldo + documento_monto;
+       END CASE;		 
+       EXECUTE 'UPDATE "Libro_CuentaContable" SET "Saldo" = ' || cuenta_nuevosaldo || ' WHERE "ID"=' || id_librocuentacontable;
+
+       -- Cierra el documento de contabilidad
+       EXECUTE 'SELECT cerrar_documento(' || id_doccont || ')';
+
+       RETURN id_doccont;
+    END IF;
+END;
+
+$$ LANGUAGE PLPGSQL;
+/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*
+CREATE OR REPLACE FUNCTION cerrar_documento(id_documento int)
+RETURNS boolean AS $$
+
+DECLARE
+	array_docid int[];
+	array_docid_index int;
+	doc_estatus text;
+
+BEGIN
+	array_docid := array(EXECUTE 'SELECT "Id_documento" FROM "Documento" WHERE "Id_DocumentoOrigen" = ' || id_documento || ')';
+	--EXECUTE 'SELECT array_legth(array_docid,1)' INTO array_docid_length
+
+	FOR array_docid_index IN 1..coalesce(array_length(array_docid, 1), 0) LOOP
+          EXECUTE 'SELECT "Estatus" FROM "Documento" WHERE "ID"='|| array_docid[array_docid_index] INTO doc_status;
+	  IF doc_status != 'C' THEN
+	    RAISE EXCEPTION 'DB_ERROR_04 --> %' array_docid[array_docid_index]; 
+	  END IF;
+	END LOOP;
+	
+	EXECUTE 'UPDATE "Estatus"='C' FROM "Documento" WHERE "Id_Documento"=' || id_documento;
+	RETURNS TRUE;
+END;
+$$ LANGUAGE PLPGSQL;

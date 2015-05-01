@@ -1,0 +1,45 @@
+--Pseudocodigo para la creacion de un documento en un lenguaje procedural de base de datos
+
+funcion crear_documento()
+{
+Entrada
+--------
+*Id Sucursal		Sucursal actual a la que el usuario está asociado
+*Nombre del Documento	Nombre clave del documento de la tabla de folios
+*Id Usuario		Usuario que manda a llamar a la funcion
+*Documento Origen	Id del documento base para el nuevo documento
+
+Begin
+1. Se inserta un nuevo registro  en la tabla de Documento:
+ID – AutoNumber
+Fecha/Hora – Fecha y Hora Actual
+Id_Usuario – Del recibido como parametro (no puede ser nulo)
+Monto = 0 sino existe un documento origen, de lo contrario el Monto del documento origen
+Id_DocumentoOrigen – Del recibido como parametro (puede ser nulo)
+FolioDocumento - generar_nuevofolio(Nombre del documento, Id Sucursal)
+Estatus = Creado
+End
+
+Salida
+------
+*Id Documento		Identificador del nuevo documento
+}
+/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*
+funcion generar_nuevofolio(Nombre del documento, Id Sucursal)
+{
+Entrada
+-------
+*Nombre del Documento	Nombre clave del documento de la tabla de folios
+*Id Sucursal		Sucursal actual a la que el usuario está asociado
+
+Begin
+1. Consulta el cliente asociado a Id Sucursal - Id Cliente
+2. Utilizando el Nombre del documento y el Cliente, consulta el mas reciente registro - Clave Folio e Id_ClaveFolio
+3. Usando la Id_ClaveFolio consulta el NumeroActual y compara con NumeroFinal, si NumeroActual > NumeroFinal regresa un error mencionando que se ha alcanzado el fin de la numeracion para el folio y no se podra generar el documento. Si NumeroActual = NumeroFinal regresa un mensaje mencionando que se ha alcanzado el limite para el folio y sera necesario generar un nuevo folio para el documento. Si NumeroActual < NumeroFinal almacena NumeroActual en una variable temporal (temp) e incrementa NumeroActual en 1.
+End
+
+Salida
+------
+Regresa un valor concatenado que consiste en Clave Folio + temp
+}
+/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*

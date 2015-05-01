@@ -1,0 +1,67 @@
+Forms
+-*-*-*-*-*-*-*-*-*-*-*-*-*-
+- Caja
+  - Elaboracion de Nota de venta en funcion de Orden de Comanda
+  - Registro de Pagos por Ventas
+  - Corte de Caja
+      - Cerrar Caja
+      - Registro de la diferencia entre lo contabilizado y el saldo de caja
+      - Autorizacion del registro de diferencias
+      - Asignacion de nuevo cajero e ingreso de saldo inicial
+      - Reapertura de Caja
+
+- Catalogo de Personas Fiscales
+  - Clientes
+  - Meseros
+  - Proveedores
+
+- Toma de Orden
+  - Creacion de Orden de Comanda
+  - Orden de Cocina/Bar 
+
+- Contabilidad
+  - Catalogo de Cuentas Contables
+  - Catalogo de Asientos Contables
+
+- Ordenes de Pago a Proveedor
+  - Elaboracion de orden de Pago en funcion de una orden de recepcion o una factura verificada
+  - Ingreso de Factura
+  - Verificacion de Factura
+  - Ingreso de Notas de Crédito 
+
+- Inventario
+  - Configuracion del metodo de valuacion de mercancias
+  - Entrada, Salida y Traspaso de Mercancias del Almacen
+
+- Administracion de Platillos y Bebidas 
+  - Categoria de Platillos
+  - Categoria de Bebidas
+  - Creacion/Edicion de Platillos
+  - Creacion/Edicion de Bebidas
+  - Modificacion masiva de Precios de Platillos
+  - Pantalla para asociacion de una fotografia al platillo
+
+- Catalogo de Ubicacion Fisica
+  - Areas de Preparacion
+  - Almacenes
+  - Mesas
+
+- Registros Maestros
+  - Catalogo de Impuestos aplicables a registros maestros 
+  - Catalogo de presentaciones
+  - Catalogo de Unidades de Medida
+  - Administracion del Inforecord del proveedor  
+
+- Documento
+  - Catalogo de Conceptos
+  - Catalogo de Movimientos
+  - Catalogo de Folios
+
+- Cuentas Bancarias
+  - Catalogo de Cuentas
+
+- Ordenes de Compra
+  - Creacion de Orden de Compra
+
+- Ordenes de Recepcion
+  - Creacion de Orden de Recepcion

@@ -1,0 +1,233 @@
+--Pseudocodigo para la aplicacion de un movimiento de almacen en un lenguaje procedural de base de datos
+
+funcion entrada_movimientoalmacen()
+{
+Entrada
+-------
+*Id Documento		Documento que esta asociado al asiento contable que se aplica
+
+Begin
+1. Se consulta del documento dado como parametro el Concepto y el Movimiento - Id_Concepto, Id_Movimiento(Entrada)
+2. Se busca el Asiento Contable con Id_Documento, Id_Concepto, Id_Movimiento - Id_Asiento
+3. Con base en el Asiento se obtienen la cuenta contable de cargo y abono - Id_CuentaContableCargo, Id_CuentaContableAbono
+4. Del documento origen, tomando como base la informacion de Id_ClaveFolio, extrae Id_Sucursal
+5. Con la informacion de Id_UbicacionFisica, se consulta el estatus del almacen, si se encuentra cerrado se cancela la operacion y se notifica el mensaje de error en donde no es posible hacer la entrada debido a que el almacen se encuentra cerrado.
+   
+      Para cada registro en Detalle_Documento relacionado con el Documento Origen
+       
+       crear_documento(Id_Sucursal, Flujo_Almacen, Id_Usuario que llama a la funcion, Id_Documento origen) - Id_Documento de almacen
+
+       Inserta un registro en la tabla Detalle_Documento 
+       	 Id_Documento - Del documento de almacen recientemente creado
+         Id_RegistroMaestro - De la mercancia en cuestion en el origen
+         Id_PersonaFiscal - De la asociada al documento origen
+         Id_UbicacionFisica - Almacen de recepcion de mercancias. Asociado al documento origen       
+         
+       Inserta un registro en la tabla ExtraDetalle_Documento
+	 Id_presentacion - Del documento origen
+	 Cantidad - Del documento origen
+         Saldo Cierre - Cantidad
+         CostoPrecio Unitario - Del documento origen
+         Costo precio total - Del documento origen
+
+       Actualizar en Detalle_Documento
+       Subtotal - Costo precio total
+
+       Actualizar en Documento
+       Monto - Subtotal
+
+       Tomando como base el Id_Ubicacionfisica, actualiza el campo Existencias de la tabla RegMaestro_Ubicacion. Donde Existencias = Existencias + Cantidad del documento de origen. En este caso se asume que la entrada es por una orden de recepcion de mercancias
+
+       aplicar_asiento(Id_Documento de almacen). Si se obtiene como resultado un documento de contabilidad valido, se procede.
+       cerrar_documento(Id_Documento de almacen). Si se obtiene como resultado True, se procede.
+End
+
+Salida
+------
+Array(Id_Documento de almacen)
+}
+*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/
+funcion salida_movimientoalmacen()
+{
+Entrada
+-------
+*Id Documento		Documento que esta asociado al asiento contable que se aplica
+
+Begin
+1. Se consulta del documento dado como parametro el Concepto y el Movimiento - Id_Concepto, Id_Movimiento(Salida)
+2. Se busca el Asiento Contable con Id_Documento, Id_Concepto, Id_Movimiento - Id_Asiento
+3. Con base en el Asiento se obtienen la cuenta contable de cargo y abono - Id_CuentaContableCargo, Id_CuentaContableAbono
+4. Del documento origen, tomando como base la informacion de Id_ClaveFolio, extrae Id_Sucursal
+5. Con la informacion de Id_UbicacionFisica, se consulta el estatus del almacen, si se encuentra cerrado se cancela la operacion y se notifica el mensaje de error en donde no es posible hacer la salida debido a que el almacen se encuentra cerrado.
+   
+   La Cantidad en la salida se asigna a una variable "Cantidad a Retirar"
+
+      Para cada registro en Detalle_Documento relacionado con el Documento Origen
+      Obtener de la tabla de configuracion el metodo de valuacion de inventario a usar
+
+      Si el método de valuación es FIFO:
+      Hacer un listado de los registros de entrada para la mercancía en cuestión de menos a más reciente y cuyo Saldo Cierre sea mayor a 0.   
+      Se suma su saldo Cierre y si es menor a la cantidad a retirar se genera un error en donde se comunica que la cantidad a retirar excede las existencias en el almacen
+
+      Si el método de valuación es LIFO:
+      Hacer una busqueda de los registros de entrada para la mercancía en cuestión de más a menos reciente y cuyo Saldo Cierre sea mayor a 0
+      Se suma su saldo Cierre y si es menor a la cantidad a retirar se genera un error en donde se comunica que la cantidad a retirar excede las existencias en el almacen  	         		  
+	 
+      Se entra a un ciclo que durara mientras Cantidad a Retirar sea mayor a cero
+      **************************************************************************************************************************
+        Si la cantidad de mercancía a retirar del almacén es menor o igual al saldo del primer registro encontrado:
+	 
+	    crear_documento(Id_Sucursal, Flujo_Almacen, Id_Usuario que llama a la funcion, Id_Documento origen) - Id_Documento de almacen
+	    Inserta un registro en la tabla Detalle_Documento 
+       	     Id_Documento - Del documento de almacen recientemente creado
+             Id_RegistroMaestro - De la mercancia en cuestion en el origen
+             Id_PersonaFiscal - De la asociada al documento origen
+             Id_UbicacionFisica - Almacen de recepcion de mercancias. Asociado al documento origen       
+         
+       	    Inserta un registro en la tabla ExtraDetalle_Documento
+	     Id_presentacion - Del documento origen
+	     Cantidad - Cantidad a retirar
+             CostoPrecio Unitario - Costo de la mercancia en el registro
+             Costo precio total - Cantidad * CostoPrecio Unitario
+
+	    Actualiza en el registro de la tabla ExtraDetalle_Documento para el registro de la entrada
+             Saldo Cierre - (Saldo Cierre - Cantidad a retirar)
+
+	    Actualizar en Detalle_Documento
+            Subtotal - Costo precio total
+
+            Actualizar en Documento
+            Monto - Subtotal
+
+            Tomando como base el Id_Ubicacionfisica, actualiza el campo Existencias de la tabla RegMaestro_Ubicacion. Donde Existencias = Existencias - Cantidad a retirar. 
+
+            aplicar_asiento(Id_Documento de almacen). Si se obtiene como resultado un documento de contabilidad valido, se procede.
+            cerrar_documento(Id_Documento de almacen). Si se obtiene como resultado True, se procede.
+
+	 ****Cantidad a retirar=0****
+      **************************************************************************************************************************
+	Si la cantidad de mercancía a retirar del almacén es mayor al saldo del primer registro encontrado:
+	 
+	    crear_documento(Id_Sucursal, Flujo_Almacen, Id_Usuario que llama a la funcion, Id_Documento origen) - Id_Documento de almacen
+	    Inserta un registro en la tabla Detalle_Documento 
+       	     Id_Documento - Del documento de almacen recientemente creado
+             Id_RegistroMaestro - De la mercancia en cuestion en el origen
+             Id_PersonaFiscal - De la asociada al documento origen
+             Id_UbicacionFisica - Almacen de recepcion de mercancias. Asociado al documento origen       
+         
+       	    Inserta un registro en la tabla ExtraDetalle_Documento
+	     Id_presentacion - Del documento origen
+	     Cantidad - Cantidad a retirar
+             CostoPrecio Unitario - Costo de la mercancia en el registro
+             Costo precio total - Cantidad * CostoPrecio Unitario
+
+	    Actualiza en el registro de la tabla ExtraDetalle_Documento para el registro de la entrada	    
+	     Saldo Cierre = 0
+
+	    Actualizar en Detalle_Documento
+            Subtotal - Costo precio total
+
+            Actualizar en Documento
+            Monto - Subtotal
+
+            Tomando como base el Id_Ubicacionfisica, actualiza el campo Existencias de la tabla RegMaestro_Ubicacion. Donde Existencias = Existencias - Cantidad a retirar. 
+
+            aplicar_asiento(Id_Documento de almacen). Si se obtiene como resultado un documento de contabilidad valido, se procede.
+            cerrar_documento(Id_Documento de almacen). Si se obtiene como resultado True, se procede.
+
+	     *****Cantidad a retirar=Cantidad a retirar-Saldo Cierre*****
+	     Consulta el siguiente registro
+
+      Si el método de valuación es Costo Promedio:
+      Calcular el Costo Promedio=Dividir la existencia actual de la mercancia en el almacen en RegistroMaestro_Ubicacion entre la suma del CostoPrecioTotal de todos los registros ExtraDetalle_Documento con un Saldo actual mayor a cero para la mercancia en cuestion
+
+      Se entra a un ciclo que durara mientras Cantidad a Retirar sea mayor a cero
+      **************************************************************************************************************************
+        Si la cantidad de mercancía a retirar del almacén es menor o igual al saldo del primer registro encontrado:
+	 
+	    crear_documento(Id_Sucursal, Flujo_Almacen, Id_Usuario que llama a la funcion, Id_Documento origen) - Id_Documento de almacen
+	    Inserta un registro en la tabla Detalle_Documento 
+       	     Id_Documento - Del documento de almacen recientemente creado
+             Id_RegistroMaestro - De la mercancia en cuestion en el origen
+             Id_PersonaFiscal - De la asociada al documento origen
+             Id_UbicacionFisica - Almacen de recepcion de mercancias. Asociado al documento origen   
+
+	    Inserta un registro en la tabla ExtraDetalle_Documento
+	     Id_presentacion - Del documento origen
+	     Cantidad - Cantidad a retirar
+             CostoPrecio Unitario - Costo Promedio
+             Costo precio total - Cantidad * CostoPrecio Unitario
+
+	    Actualiza en el registro de la tabla ExtraDetalle_Documento para el registro de la entrada
+            Saldo Cierre - (Saldo Cierre - Cantidad a retirar)
+
+	    Actualizar en Detalle_Documento
+            Subtotal - Costo precio total
+
+            Actualizar en Documento
+            Monto - Subtotal
+
+            Tomando como base el Id_Ubicacionfisica, actualiza el campo Existencias de la tabla RegMaestro_Ubicacion. Donde Existencias = Existencias - Cantidad a retirar. 
+
+            aplicar_asiento(Id_Documento de almacen). Si se obtiene como resultado un documento de contabilidad valido, se procede.
+            cerrar_documento(Id_Documento de almacen). Si se obtiene como resultado True, se procede.
+
+	 ****Cantidad a retirar=0****
+      **************************************************************************************************************************
+	Si la cantidad de mercancía a retirar del almacén es mayor al saldo del primer registro encontrado:
+	 
+	    crear_documento(Id_Sucursal, Flujo_Almacen, Id_Usuario que llama a la funcion, Id_Documento origen) - Id_Documento de almacen
+	    Inserta un registro en la tabla Detalle_Documento 
+       	     Id_Documento - Del documento de almacen recientemente creado
+             Id_RegistroMaestro - De la mercancia en cuestion en el origen
+             Id_PersonaFiscal - De la asociada al documento origen
+             Id_UbicacionFisica - Almacen de recepcion de mercancias. Asociado al documento origen       
+         
+       	    Inserta un registro en la tabla ExtraDetalle_Documento
+	     Id_presentacion - Del documento origen
+	     Cantidad - Cantidad a retirar
+             CostoPrecio Unitario - Costo promedio
+             Costo precio total - Cantidad * CostoPrecio Unitario
+
+	    Actualiza en el registro de la tabla ExtraDetalle_Documento para el registro de la entrada	    
+	     Saldo Cierre = 0
+
+	    Actualizar en Detalle_Documento
+            Subtotal - Costo precio total
+
+            Actualizar en Documento
+            Monto - Subtotal
+
+            Tomando como base el Id_Ubicacionfisica, actualiza el campo Existencias de la tabla RegMaestro_Ubicacion. Donde Existencias = Existencias - Cantidad a retirar. 
+
+            aplicar_asiento(Id_Documento de almacen). Si se obtiene como resultado un documento de contabilidad valido, se procede.
+            cerrar_documento(Id_Documento de almacen). Si se obtiene como resultado True, se procede.
+
+	     *****Cantidad a retirar=Cantidad a retirar-Saldo Cierre*****
+	     Consulta el siguiente registro
+End
+
+Salida
+------
+Array(Id_Documento de almacen)
+}
+*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/
+funcion aplicar_movimientoalmacen()
+{
+Entrada
+-------
+*Id Documento		Documento que esta asociado al asiento contable que se aplica
+
+Begin
+1. Se consulta del documento dado como parametro el Concepto y el Movimiento - Id_Concepto, Id_Movimiento
+
+Begin
+1. Si el tipo de movimiento del documento es entrada: entrada_movimientoalmacen(Id_Documento)
+2. Si el tipo de movimiento del documento es salida: salida_movimientoalmacen(Id_Documento)
+3. Si el tipo de movimiento del documento es traspaso: 
+   entrada_movimientoalmacen(Id_Documento) 
+   salida_movimientoalmacen(Id_Documento)
+End
+
+Salida
+------

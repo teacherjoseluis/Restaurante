@@ -1,0 +1,46 @@
+Queries
+*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+
+- Calcular el punto de reorden
+
+CREATE OR REPLACE FUNCTION calcular_puntoreorden(id_registromaestro int)
+RETURNS numeric AS $$
+
+DECLARE
+	InventarioSeg numeric;
+	puntoreorden numeric;
+	puntoreordendias int;
+	compraproceso int;
+	tiempoentrega int;
+	recepcionproceso int;
+
+	sumacantidad numeric;
+	promedioconsumido numeric;
+	totalentrega int;
+
+BEGIN
+  --Revisar en el catalogo de la mercancia el valor del inventario de seguridad. Mayor o igual a 1.
+  --*** Asegurarse que tanto el Id_ConceptoDocumento de este query y el de la tabla de Conceptos corresponda a la salida por venta ***
+    EXECUTE 'SELECT "InventarioSeguridad" FROM "RegMaestro_Inventario" WHERE "Id_RegistroMaestro" =' id_registromaestro INTO InventarioSeg;
+    EXECUTE 'SELECT "PuntoReorden_DiasCalculo", "OrdenCompra_TiempoProceso", "Proveedor_TiempoEntrega", "RecepcionMercancia_TiempoProceso" FROM "Configuracion_Sistema" INTO puntoreordendias, compraproceso, tiempoentrega, recepcionproceso;
+    EXECUTE 'SELECT SUM(EDD."Cantidad") FROM "ExtraDetalle_Documento" EDD INNER JOIN "Detalle_Documento" DD  EDD."Id_DetalleDocumento" = DD."ID" INNER JOIN "Documento" D ON DD."Id_Documento" = D."ID" WHERE D."Id_DocumentoMovimiento"=2 AND D."Id_ConceptoDocumento"=2 AND D."Fecha/Hora" BETWEEN (TIMESTAMP - puntoreordendias) AND TIMESTAMP INTO sumacantidad;
+  
+   promedioconsumido := sumacantidad / puntoreordendias;
+   totalentrega := compraproceso + tiempoentrega + recepcionproceso;
+   puntoreorden := (promedioconsumido * totalentrega) + InventarioSeg;
+
+   RETURN puntoreorden;
+END;
+$$ LANGUAGE PLPGSQL;
+
+
+- Consultar Categorias de Registros Maestros
+- Consultar Registros Maestros en funcion de su Categoria
+- Consultar si hay existencias suficientes de mercancias en los almacenes de una sucursal para poder satisfacer una orden
+- Consultar movimientos del almacen con distintos filtros
+- Consultar movimientos en un rango de dias, con distintos filtros para una cuenta contable dada (exportable a distintos formatos?)
+- Consulta movimientos de Banco con distintos filtros
+- Consulta de movimientos de caja con distintos filtros
+- Consultar para una sucursal dado, los registros maestros asociados, sus existencias actuales y ubicacion. Filtrado por almancen
+- Consulta de las existencias de un platillo dado en funcion de las cantidades de registros maestros en una sucursal. Filtrado por almacen
+- Calculo del costo aproximado de un platillo en funcion de las mercancias y cantidades seleccionadas segun el metodo de valuacion configurado

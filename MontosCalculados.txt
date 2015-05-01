@@ -1,0 +1,77 @@
+Teoria general de los montos calculados
+-----------------------------------------
+
+Los montos calculados surgen de la necesidad de mantener un registro y contabilidad de conceptos tales como descuentos, impuestos y cargos en documenos que representen un ingreso o egreso de dinero al restaurante. Los montos calculados significan un mayor grado de complejidad debido a que son configurables y potencialmente un solo documento del sistema podria tener cero, uno o varios montos asociados con distintas formas de contabilizacion para cada uno de ellos. Cabe hacer mencion que un monto calculado puede estar asociado a un documento en general (llamese nota de venta o factura en caso de cargos por entrega por citar un ejemplo) o bien puede corresponder a cada uno de los elementos de este documento (por ejemplo en una factura del proveedor que contenga bebidas alcoholicas y no alcoholicas, el monto calculado aplicara para algunos elementos mientras que para otros no) 
+
+Creacion de un monto calculado
+------------------------------
+Dejando de lado el registro de un monto en el catalogo de montos calculados en donde se podra especificar si corresponden a un monto fijo o porcentaje sobre el valor de la entidad a la que se asocian, el monto calculado se asigna en la elaboracion del documento. Un aspecto que hay que destacar es que el usuario selecciona el montocalculado a nivel documento unicamente y puede tener a bien no seleccionar ninguno pero los montos calculados a nivel detalle documento (que para esta implementacion solo se limitan a impuestos) son calculados de forma automatica debido a una asociacion del registro maestro con una entidad Perfil_Impuesto que a su vez se asocia con el Monto Calculado. De tal suerte, el usuario no tiene que especificar ningun tipo de montocalculado en el detalle del documento para que este quede registrado a nivel base de datos.
+
+Registro de los montos calculados en la BD
+------------------------------------------
+A la creacion de un documento que represente un preambulo al ingreso o egreso de recursos economicos en el restaurante, es decir la nota de venta y la factura del proveedor dado que en ese punto se reconocera, mas no se aplicara contablemente los asientos que posteriormente se confirmaran por los otros documentos como el pago de cliente y pago de proveedor.
+
+Registro contable de los montos calculados
+------------------------------------------
+Como se menciono anteriormente, los montos calculados se asentaran contablemente en documentos de naturaleza de pago, es decir cuando se confirme el ingreso o egreso de dinero en la empresa.
+Vale la pena poner en consideracion el hecho que al igual que procesos almacenados tales como Flujo de Almacen, estos pagos pudieran tambien ser codificados a nivel base de datos y asi aprovechar la infraestructura ya creada. 
+
+En terminos generales, el pago del cliente seguiria los siguientes pasos:
+
+1. Determinacion de la forma de pago
+   La forma de pago sera registrada en la BD como un ConceptoDocumento relacionado con un movimiento de Ingreso para el documento Pago. Esta forma de pago determinara el asiento contable que se realizara, teniendo como cuenta de Cargo, la de la Caja o Banco en cuestion que recibe el ingreso
+
+2. Dependiendo de la forma de pago que se seleccione sera el concepto y por ende el tipo de asiento que se generara, como regla de negocio del sistema, en caso de que la forma de pago sea por medios bancarios (tarjetas de credito o debito), se obligara la seleccion de un monto calculado de naturaleza cargo por la comision bancaria en la que se incurrira.
+
+3. Debido a que los montos calculados a nivel documento vienen asociados desde la elaboracion del documento padre (nota de venta) y automaticamente calculados en el detalle de este documento, se creara un documento de Caja/Banco por la porcion del pago que corresponda al valor del Documento y uno por cada concepto distinto de Monto Calculado, por ejemplo:
+
+   Pago de una Nota de Venta que consta de los siguiente:
+
+    Monto del Consumo  	    $1,000
+    Total Impuesto IVA      $160 (16% por cada elemento de la orden lo cual se calculara de forma individual segun el perfil de impuesto)
+    Total Impuesto IEPS     $40  (8% por cada elemento de la orden que lo causa, se considerara que el 50% del consumo causo este impuesto)
+    Cargo por envio 	    $25  (Valor fijo)
+    Total que se recibira:  $1,225
+
+    Monto del Consumo	  Se registra el pago por el valor del documento al asiento que corresponda a la clave folio, concepto y movimiento
+    Total Impuesto IVA	  Para la clave folio, concepto y movimiento del padre se usa el montocalculado para ubicar el asiento correcto
+    Total Impuesto IEPS	  Para la clave folio, concepto y movimiento del padre se usa el montocalculado para ubicar el asiento correcto
+    Cargo por envio 	  Para la clave folio, concepto y movimiento del padre se usa el montocalculado para ubicar el asiento correcto
+
+    Por lo que se generan 4 distintos documentos de pago, todos y cada uno asociados al mismo documento padre y con cargo a la misma cuenta (determinada en la forma de pago) pero con abonos a cuentas distintas dada por la relacion DocumentoAsiento_MontoCalculado.
+
+Cambios en el disenio de la BD al 2015/04/10
+--------------------------------------------
+1. Se rompe la asociacion entre la entidad Asiento_Contable y MontoCalculado
+2. Se crea una entidad que asocie a Documento_Asiento con Monto_Calculado: "DocumentoAsiento_MontoCalculado" - Al hacer esto, dependiendo del documento, tipo de documento y concepto; el usuario podra seleccionar de una lista valida de montos calculados cuales son los que aplican al escenario en cuestion y mas importante aun, le permitiran aplicar el asiento contable que corresponda segun sea el caso
+
+Ideas a fin de soportar la configurabilidad de los asientos contables
+---------------------------------------------------------------------
+Los campos "Tipo" de entidades tales como Ubicacion Fisica y Persona Fiscal deberian trasladarse a relaciones con una tabla general que permita conocer si el ID en cuestion que se esta procesando es de un Cliente, Proveedor, Caja, Almacen, Banco, etc. Así aunque el Cliente y Proveedor se registren internamente en la tabla de Persona Fiscal o la Caja y el Almacen como Ubicacion Fisica, sera posible discernir su tipo y llegar a obtener su particular cuenta contable para la Entidad de Asiento_Contable.
+
+Los cambios que se sugieren son:
+1. Crear en Cuenta_Contable un atributo adicional de llave foranea "Id_SubcuentaContable" que le permita relacionarse con sigo misma de tal forma que una Cuenta contable, tenga subcuentas contables. El sistema soportara hasta 3 niveles jerarquicos en esta tabla.
+
+3. La validacion de los niveles jerarquicos sera hecha a nivel del negocio y no de la base de datos. El siguiente es un ejemplo de como quedaria esta relacion:
+
+   Nivel 1	    	- Pasivo
+   	 Nivel 2    	- Proveedores
+	       Nivel 3  - Comercializadora de frutas y legumbres San Angel
+
+Otros ejemplos:
+
+   Nivel 1		- Ingresos
+   	 Nivel 2	- Clientes
+	       Nivel 3  - Jose Rafael Sanchez Montenegro
+
+   Nivel 1		- Activo
+   	 Nivel 2	- Bancos
+	       Nivel 3  - Cuenta Bancaria HSBC
+
+La creacion de cuentas del nivel 3 serian automaticamente generadas por el sistema al momento de la creacion de la entidad relacionada (Cliente, Proveedor, Cuenta Bancaria, etc.). Se creara un nuevo registro en Cuenta_Contable asociado a la cuenta de Nivel 2 y se asignara el valor en el Campo de cuenta contable de la Entidad (Atributo aun no existe, seria un ID)
+
+4. Algunas de las reglas de negocio que se implementarian a raiz de esta solucion son las siguientes:
+   4.1 Entidades como Persona Fiscal, Cuenta Bancaria o Ubicacion Fisica, se asociaran con registros de cuenta contable de nivel 3
+   4.2 El atributo Tipo para cada uno de estas entidades, se asociaran con registros de cuenta contable 2
+   4.3 Los asientos contables se crearan/configuraran a Nivel 2
+   4.4 A fin de aplicar el asiento contable, se debera usar la informacion del Documento para inferir el Cliente, Proveedor, Almacen, etc. al que se le hara el Cargo o Abono.

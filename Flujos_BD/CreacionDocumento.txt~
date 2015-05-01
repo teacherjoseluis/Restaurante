@@ -1,0 +1,18 @@
+--Pseudocodigo para la creacion de un documento en un lenguaje procedural de base de datos
+
+funcion crear_documento()
+{
+Entrada
+--------
+*Id Sucursal	Sucursal actual a la que el usuario está asociado
+*Nombre del Documento	Nombre clave del documento de la tabla de folios
+*Id Usuario	Usuario que manda a llamar a la funcion
+*Documento Origen	Id del documento base para el nuevo documento
+
+Begin
+
+
+
+End
+
+}

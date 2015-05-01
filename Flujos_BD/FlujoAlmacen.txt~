@@ -1,0 +1,58 @@
+--Pseudocodigo para la aplicacion de un movimiento de almacen en un lenguaje procedural de base de datos
+
+funcion aplicar_movimientoalmacen()
+{
+Entrada
+-------
+*Id Documento		Documento que esta asociado al asiento contable que se aplica
+
+-- El flujo de almacen contempla unicamente tres posibles tipos de movimiento:
+* Entrada
+* Traspaso
+* Salida
+Este tipo de movimiento esta dado por el documento asociado a esta transaccion
+
+Begin
+1. Se consulta del documento dado como parametro el Concepto y el Movimiento - Id_Concepto, Id_Movimiento
+2. Se busca el Asiento Contable con Id_Documento, Id_Concepto, Id_Movimiento - Id_Asiento
+3. Con base en el Asiento se obtienen la cuenta contable de cargo y abono - Id_CuentaContableCargo, Id_CuentaContableAbono
+4. Del documento origen, tomando como base la informacion de Id_ClaveFolio, extrae Id_Sucursal
+------------------------------------------------------------
+crear_documento(Id_Sucursal, Flujo_Almacen, Id_Usuario que llama a la funcion, Id_Documento origen) - Id_Documento de almacen
+------------------------------------------------------------
+5. Asocia al documento recien creado el Id_Movimiento y el Id_Concepto del Origen
+
+6. Para cada registro en Detalle_Documento relacionado con el Documento Origen
+   Inserta un registro en la tabla Detalle_Documento 
+     Id_Documento - Del documento de almacen recientemente creado
+     Id_RegistroMaestro - De la mercancia en cuestion en el origen
+     Id_PersonaFiscal - De la asociada al documento origen
+     Id_UbicacionFisica - Almacen de recepcion de mercancias. Asociado al documento origen       
+     Subtotal - Del subtotal del documento Origen
+   
+   6.1 Si el movimiento del documento origen es Entrada
+
+       Inserta un registro en la tabla ExtraDetalle_Documento
+       Id_presentacioncompra - Del documento origen
+       cantidadsurtidacompra - Del documento origen
+       preciounitariocompra - Del documento origen
+       preciototalcompra - Del documento origen
+
+       Tomando como base el Id_Ubicacionfisica, actualiza el campo Existencias de la tabla RegMaestro_Ubicacion. Donde Existencias = Existencias + cantidadsurtidacompra
+
+       aplicar_asiento(Id_Documento de almacen)
+   
+
+
+   Para cada registro en Detalle_Documento relacionado con el Documento Origen
+     
+   5.1 Inserta un registro en la tabla Detalle_Documento 
+       Id_Documento - Del documento de almacen recientemente creado
+       Id_RegistroMaestro - De la mercancia en cuestion en el origen
+       Id_PersonaFiscal - De la asociada al documento origen
+       Id_UbicacionFisica - Almacen de recepcion de mercancias. Asociado al documento origen       
+       Subtotal - Del subtotal del documento Origen
+
+6. Si el movimiento del documento origen es Salida
+7. Si el movimiento del documento origen es Traspaso
+End

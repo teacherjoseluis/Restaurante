@@ -1,0 +1,60 @@
+--http://stackoverflow.com/questions/7718585/how-to-set-auto-increment-primary-key-in-postgresql
+--http://www.sqlines.com/postgresql/how-to/create_user_defined_type
+
+CREATE OR REPLACE FUNCTION crear_documento (id_sucursal int, nombredocumento text, id_usuario int, id_docorigen int, id_conceptodocumento int, id_documentomovimiento int)
+RETURNS integer AS $$
+
+DECLARE
+    resultrecord folio;
+    --folio_documento text;
+    fecha_hora timestamp;
+    --idclavefolio int;
+    id_documento int;
+
+BEGIN
+    EXECUTE 'SELECT generar_nuevofolio('''|| nombredocumento || ''', ' || id_sucursal ||' )' INTO resultrecord;
+	RAISE INFO 'Folio % - %', (resultrecord).idclavefolio, (resultrecord).foliotext; 
+    EXECUTE 'SELECT LOCALTIMESTAMP' INTO fecha_hora;
+	RAISE INFO 'Fecha %', fecha_hora;
+	RAISE INFO '% - %  - %  - %  - %  - %  - %', fecha_hora, resultrecord.idclavefolio,id_usuario,id_docorigen,id_conceptodocumento,id_documentomovimiento,resultrecord.foliotext; 
+    EXECUTE 'INSERT INTO Documento ("Fecha/Hora", "Id_ClaveFolio", "Id_Usuario", "Monto", "Id_DocumentoOrigen", "Id_ConceptoDocumento", "FolioInterno", "Estatus", "Id_DocumentoMovimiento", "FolioDocumento") 
+    VALUES (''' || fecha_hora ||''', '||(resultrecord).idclavefolio||', '||id_usuario||', 0, '||id_docorigen||', '||id_conceptodocumento||', '''''', ''N'', '||id_documentomovimiento||', '''||(resultrecord).foliotext||''')';
+    EXECUTE 'SELECT "ID" FROM "Documento" WHERE "FolioDocumento" = '''||(resultrecord).foliotext||'''' INTO id_documento;
+    RETURN id_documento;
+END;
+
+$$ LANGUAGE PLPGSQL;
+/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*
+CREATE OR REPLACE FUNCTION generar_nuevofolio(nombredocumento text, id_sucursal int)
+RETURNS TABLE (text, int) AS $$
+
+DECLARE
+  id_cliente int;
+  clave_folio text;
+  idclavefolio int;
+  max_folio int;
+  numeroactual int;
+  numeroactualnuevo int;
+  numerofinal int;
+
+BEGIN
+  EXECUTE 'SELECT "Id_Cliente" FROM "Sucursal_Sistema" WHERE "Id_Sucursal" = id_sucursal' INTO id_cliente;
+  EXECUTE 'SELECT "ID", "ClaveFolio" FROM "Clave_Folio" WHERE "NombreDocumento" = nombredocumento AND "Id_ClienteSistema" = id_cliente' INTO idclavefolio, clave_folio;
+  EXECUTE 'SELECT MAX("ID") FROM "Numeracion_Folio" WHERE "Id_ClaveFolio" = clave_folio AND "Id_Sucursal_Sistema" = id_sucursal' INTO max_folio;
+  EXECUTE 'SELECT "NumeroActual", "NumeroFinal" FROM "Numeracion_Folio" WHERE "ID" = max_folio' INTO numeroactual, numerofinal;
+   
+  IF numeroactual > numerofinal THEN
+   RAISE EXCEPTION 'DB_ERROR_01 --> %' numeroactual;
+  END IF;
+  IF numeroactual = numerofinal THEN
+   RAISE NOTICE 'DB_NOTICE_01 --> %' numeroactual;
+  ELSE
+   numeroactualnuevo := numeroactual + 1;
+   EXECUTE 'UPDATE "Numeracion_Folio" SET "NumeroActual" = numeroactualnuevo WHERE "ID" = max_folio';
+  END IF;
+       
+  RETURN clave_folio || '_' || id_sucursal || '_' || numeroactualnuevo, idclavefolio;
+
+END;
+
+$$ LANGUAGE 'PLPGSQL';

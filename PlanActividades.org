@@ -1,0 +1,74 @@
+* Plan de Accion
+** Capa de Aplicacion
+Este es un plan inicial de las tareas de codificacion de la capa de aplicacion al [2015-04-22 Wed]:
+*** 1. Model
+Modelo de datos basandose en la BD ya existente. Esta seccion podria estar considerando la funcionalidad que permite la generacion de multiples documentos asociados a otro y cuyo limite corresponde al saldo entre si. Por ejemplo Orden Comanda - Nota de Venta - Pagos del Cliente
+**** 3. Query (Se integra con Model)
+Modulo donde existan queries predefinidos generados a partir del modelo, para algunas situaciones como la del calculo del punto de reorden, estoy recurriendo a manejarlo mediante stored procedures
+*** 2. User & Admin
+Aqui vamos a dedicar algo de tiempo a lo relacionado con el registro de usuarios, validacion de accesos, etc., asi como considerar que catalogos se pudieran estar manejando por medio de Admin, quizas la configuracion del sistema. [2015-04-27 Mon] Se debe considerar que tiene que existir integridad referencial entre el Usuario y los documentos que ha creado.
+*** 4. Service
+Servicios principalmente requeridos por los modulos de Docflow y Viewflow
+*** 5. Docflow
+Flujo de trabajo a nivel documentos del sistema
+*** 6. Signal
+Modulo de comunicacion de seniales a partir de cambios de estatus en los modulos de Docflow
+*** 7. Viewflow
+Flujo de trabajo a nivel procesos (inventario fisico, corte de caja, conciliacion, etc.)
+*** 8. Signal
+Modulo de comunicacion de seniales a partir de cambios de estatus en los modulos de Viewflow
+*** 9. Form
+Modulo que procesa las formas del sistema
+
+*** 10. Negocio [2015-04-27 Mon]
+**** Notas a considerar
+***** Base de Datos
+1. El proceso de traspaso no se estara controlando desde los procedimientos almacenados, sino que seran internamente creados un registro de entrada y uno de salida desde la capa de aplicacion. No existira tal cosa como un Movimiento=3. [2015-04-22 Wed]
+***** Documentos
+La creacion de documentos cuya naturaleza implique un traspaso, como la orden de comanda debe de crear internamente un documento de entrada y otro de salida. Este documento no se podra procesar para propositos de asiento per se, sino que a su aplicacion generara ambos documentos que seran asentados individualmente. El detalle del documento sera compartido entre la Entrada y la Salida. [2015-04-22 Wed]
+***** Conversion de Unidades de Medida [2015-04-27 Mon]
+Que se debe implementar la funcionalidad de conversion de unidades de medida en la creacion de los documentos de orden de compra y orden de comanda usando la informacion del platillo. No estimo que se afecte la codificacion ya hecha para las entradas y salidas de mercancias, todos los movimientos estan hechos sin considerar unidad de medida (la cual es la de inventario)
+
+
+* Tareas del sistema
+** Base de Datos
+*** TODO [#A] Aplicar cambios de nuevas columnas en la base de datos. <2015-05-01 Fri>
+*** TODO Actualizar procedimientos almacenados de almacenes y crear nuevos procedimientos de Bancos y Caja <2015-05-01 Fri>
+*** TESTING [#B] Procedimientos almacenados en la BD usando funcion de generacion de documentos <2015-05-01 Fri>
+*** DESIGN Trabajar en procedimientos/queries del sistema
+    - State "DESIGN"     from "ANALISYS"   [2015-04-22 Wed 10:20]
+*** INVESTIGATE Implementacion de los procedimientos pertinentes para loggear excepciones en la base de datos. [[http://stackoverflow.com/questions/722221/how-to-log-postgresql-queries][stackoverflow postgresql log]] <2015-05-01 Fri>
+*** TODO Aplicar cambios hechos el [2015-04-28 Tue] a la BD de Access a la BD de Postgresql. <2015-05-01 Fri>
+
+** Preparacion del ambiente de desarrollo
+De momento estoy pensando montar el servidor sobre el mismo ambiente en donde tengo la base de datos para propositos de facilidad y agilizar el proceso. Sin embargo, llegara el momento en donde tenga que probar conectividad entre ambientes distintos por lo que considerare implementar un servidor de pruebas en una maquina virtual de alguna distro Linux [2015-04-22 Wed]
+*** INVESTIGATE Utilizacion de Emacs junto con Python como IDE a fin de empezar a codificar algunas clases aunque no se corran <2015-05-11 Mon>. [[http://www.jesshamrick.com/2012/09/18/emacs-as-a-python-ide/][emacs como IDE,]] [[http://stackoverflow.com/questions/10241279/how-do-i-run-a-python-interpreter-in-emacs][emacs IDE stackoverflow]]
+*** TODO [#B] Instalar *DJANGO* y generar modelo con /InspectDB/ <2015-05-02 Sat>
+[[http://www.djangobook.com/en/2.0/chapter18.html][django model]]
+*** INVESTIGATE [#A] Instalacion de Apache como Application Server a fin de usar DJANGO <2015-05-02 Sat>
+[[http://www.webforefront.com/django/setupapachewebserverwsgi.html][apache web server]]
+*** INVESTIGATE [#B] Gestionar Dropbox como repositorio del codigo que vaya generando junto con Git: <2015-05-04 Mon>. [[http://www.looselytyped.net/2013/09/27/super-easy-source-control-using-git-and-dropbox-together/][link de la pagina]]
+*** INVESTIGATE Otra opcion al respecto es manejar Github para lo cual ya he creado un proyecto. Este es un cheatsheet de los comandos basicos de git [[https://techbase.kde.org/images.techbase/2/2f/Zrusin-git-cheat-sheet-medium.png][link ]]<2015-05-02 Sat>
+
+
+* Planes a futuro
+** Carga de datos de registros maestros
+Hacerlo por medio de una plantilla en excel que internamente genere un archivo SQL
+** Ambientes de prueba
+*** Capa de Aplicacion
+Probablemente se monte un servidor Debian por medio de una maquina virtual en la maquina Windows. El servidor de desarrollo probablemente tambien se mueva a mi Laptop Gateway. [2015-04-22 Wed]
+*** Base de Datos
+Llegara un punto en donde la BD actualmente en Windows sea trasladada a mi Laptop Gateway y esta ultima se convierta en el servidor de desarrollo. La base de datos actualmente en Windows se convertira en el servidor de pruebas, los datos ahi ingresados seran exclusivamente mediante la misma aplicacion de pruebas y se mantendran las modificaciones directas al minimo. [2015-04-22 Wed]
+
+
+
+* Cambios Inmediatos
+** DONE Reinegieria sobre relacion entre Concepto y Documento <2015-04-28 Tue>
+- Este cambio consiste en aplicar sobre la base de datos y los procedimientos almacenados ya codificados, el hecho que el Concepto no sera mas una entidad independiente sino que estara asociada a un Documento y tambien a un Asiento Contable. Quiere esto decir que habra tablas en la base de datos que seran impactadas:
+  + Asiento Contable :: Se removera. Dado que no es posible que exista una asiento contable sin una asignacion de como se aplicara
+  + Documento Concepto :: Incluira el documento al que se asocia y la cuentas de cargo y abono que serian impactadas asi como una relacion con el movimiento al que se refiere (Ingreso, Egreso)
+  + Documento Asiento :: Se removera. Dado que la relacion ya existe en Documento Concepto
+  + Movimiento Contable :: Se removera la relacion con Asiento Contable y se establecera con Documento Concepto
+  + Documento :: Se removera su relacion con Id_Movimiento
+- Lo que se intenta lograr con este cambio es dar mas consistencia y logica a las relaciones asi como facilitar el proceso de captura de la informacion contable. El usuario final solamente tendra que crear un concepto el cual tiene que asociar al documento en el que se mostrara y las cuentas contables que seran afectadas, en este punto se pueden limitar las cuentas contables por el tipo de documento del que se trate. Los procesos en base de datos se reducen en complejidad.
+** TODO Hacer un mapeo entre las entidades de la capa de datos y el patron de disenio que hay que aplicar <2015-04-29 Wed>

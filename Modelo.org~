@@ -1,0 +1,148 @@
+* Requerimientos para la capa de Datos
+Algunos consejos y mejores practicas para el disenio de la capa de datos de la pagina de microsoft: [[https://msdn.microsoft.com/en-us/library/ee658119.aspx][link]] 
+El modelo generado por Django hace un mapeo de uno a uno con las tablas de la base de datos. Partiendo de esa premisa, las consideraciones que se tomaran en cuenta son:
+
++ *DAO* Lo cambio a *Repository* [2015-04-24 Fri] :: /Se creara un (Data Access Object) [[http://java.dzone.com/articles/database-interaction-dao-and][DAO]] ([[http://www.visual-paradigm.com/support/documents/vpuserguide/276/213/7045_persistentap.html][esta]] es otra buena guia de disenio de DAOs) sobre el cual se codificara la mayoria de la logica de acceso a datos y en donde para cada entidad principal (ubicacion fisica, registro maestro, persona fiscal, etc.) se crearan una serie de metodos que abstraeran funcionalidad. Estoy considerando que dicha funcionalidad comparta caracteristicas comunes entre si, por lo que es posible la creacion de una clase que las contenga. Estoy interesado en manejar excepciones a grados de detalle muy minuciosos./ Con este patron, se logra algo que no encontraba del todo satisfactorio con DAO, con repository se pueden pasar como parametros las entidades sobre las que quiero aplicar cierta operacion en la BD, los metodos en el repositorio seran genericos y aplicaran para un gran numero de situaciones sin impedir que se hagan implementaciones especificas. La clase obviamente tambien expondra una interfaz. Guia de repository [[http://www.remondo.net/repository-pattern-example-csharp/][aqui]]
+
++ *Transacciones* :: Otro elemento que me interesa manejar es el que concierne a la consistencia de la informacion antes de ejecutar una transaccion. Quiere esto decir que antes de efectivamente hacer el insert o update, el sistema haga validaciones minimas de consistencia. En este proceso se traera de base de datos los valores requeridos para aplicar la operacion como valores actuales de llaves primarias (entre otros) a fin de no hacer consultas constantes a la base de datos durante el proceso. Manejo de Transacciones en Django [[https://realpython.com/blog/python/transaction-management-with-django-1-6/][link]]
+
++ *Bloqueo* :: Mecanismo de bloqueo en el proceso de validacion y la aplicacion de la transaccion y asi evitar que existan otros procesos que puedan afectar la consistencia de los datos. Un ejemplo de una clase que bloquea podria ser [[https://djangosnippets.org/snippets/833/][este]]. Este otro [[http://www.voidspace.org.uk/python/weblog/arch_d7_2011_05_07.shtml][link]] no lo he leido pero parece contener informacion interesante.
+
++ *Cursor* :: Puedo estar considerando que los queries a BD se hagan limitando las consultas por un rango de fechas (similar a los bancos en donde se forza a que el rango no sea mayor de 3 meses por ejemplo), sucursal, usuario, tipo de documentos, etc., con el fin de buscar que los resultados arrojados sean lo mas pequeños posible. En el caso de que se requieran hacer consultas con un rango de fechas mas extenso, se tendrian que idear otros mecanismos, pensar en que situaciones aplicaria este tipo de consultas y quizas manejarlas de manera asincrona. A fin de traer informacion paginada de la base de datos. De momento esta informacion no la he podido encontrar en la red. En lo que encuentro algun ejemplo de implementacion o casos practicos. 
+
++ *Persistencia de Datos* :: Con respecto a la persistencia, el mecanismo principal sera la BD sin lugar a dudas. Existen otros mecanismos de persistencia pero estan relacionados a la informacion propia de la sesion y el framework provee otros mecanismos a ser usados en otras capas. El framework registrara tambien la informacion de los usuarios de la aplicacion en la BD quizas con ciertos mecanismos de encriptacion.
+
++ *Procesos asincronos* :: Tambien estoy considerando que la capa de datos realice de manera asincrona las ejecuciones de procedimientos almacenados relacionados con los flujos de caja, bancos y almacen, es decir los procesos que realizan asientos de documentos. Aunque no son procesos demasiado pesados, dada la cantidad de tablas afectadas y lo potencialmente grande que pudieran ser algunos documentos usados como referencia, en determinadas circunstancias podria volverse muy caro para la BD. Tambien manejara el proceso del plan de compras. Aqui hay un [[https://community.webfaction.com/questions/17426/tutorial-django-celery-rabbitmq-virtualenv][tutorial]] de como usar Django + RabbitMQ + Celery. Este es un [[https://github.com/simondlr/Django-Celery-Rabbitmq-full-example][ejemplo]] de Github. Aqui hay otra [[http://docs.dotcloud.com/tutorials/python/django-celery/][liga]] que podria ser util. Configuracion del servidor de RabbitMQ [[http://docs.dotcloud.com/tutorials/more/cloudamqp/][aqui]]
+
++ *Loggeo de eventos* :: No se si se dispondra de una BD aparte o un archivo de logs, pero estoy interesado en que los errores arrojados por esta capa sean loggeados para su posterior analisis. [[http://stackoverflow.com/questions/5739830/simple-log-to-file-example-for-django-1-3][Aqui]] hay una configuracion de logging en settings.py
+
++ *Autenticacion* :: La llamada a los metodos de esta capa se hara a traves de la capa de negocio por lo que considero que no cabria la verificacion o autenticacion.
+
++ *Lazy Loading* :: Esto aparentemente se satisface con los Querysets in Django, aqui una [[http://stackoverflow.com/questions/1085378/lazy-loading-relationships-in-django-and-other-mvcs-orms][liga]]
+
++ *RAW SQL* :: Poder extraer registros y no objetos del modelo? Para propositos de reporteo?. Es posible mediante llamados "crudos" a la base de datos en donde se pasa por alto al modelo. Esta [[http://stackoverflow.com/questions/5931586/raw-sql-queries-in-django-views][liga]] contiene un ejemplo.
+
++ *Connection pooling* :: Aqui hay una [[http://www.craigkerstiens.com/2013/03/07/Fixing-django-db-connections/][liga]]
+
+* Mapeo entre requerimientos del DAL y su implementacion
+| Requerimiento | Implementacion                                                                                                           |
+| ------------- | -----------                                                                                                              |
+| Repository    | Clase con metodos genericos para operaciones comunes en datos e implementaciones especificas para operaciones especiales |
+| Transacciones | Dentro del detalle de cada metodo en especifico en bloques, tal y como se especifica en la liga                          |
+| Bloqueo       | Al inicio y fin de cada transaccion se haria y se levantaria el bloqueo                                                  |
+| Cursor        | Para el caso de los queries, estos se diseniaran solicitando varios parametros para el filtrado                          |
+| Persistencia  | Base de datos                                                                                                            |
+| Asincronos    | A aplicarse para llamadas a asientos de documentos por medio de rabbit mq y celery                                       |
+| Loggeo        | Por medio de archivos de logs                                                                                            |
+| Lazy Loading  | Se implementa directamente en el framework                                                                               |
+| RAW SQL       | Se permite como funcionalidad del Modelo                                                                                 |
+| Pooling       | Existen librerias fuera del framework que lo permiten                                                                    |
+
+* Tablas que forman parte del modelo
+1. Ubicacion Fisica
+2. Ubicacion Detalle
+3. Registro Maestro
+4. Presentacion
+5. RegMaestro UbicacionFisica
+6. RegMaestro Compra
+7. RegMaestro Contabilidad
+8. RegMaestro Foto
+9. RegMaestro Inventario
+10. RegMaestro Pedimento
+11. RegMaestro Venta
+12. Persona Fiscal
+13. Proveedor RegMaestro_Compra
+14. PersonaFiscal Proveedor
+15. Cuenta Bancaria
+16. Documento
+17. Agrupador
+
+* Metodos genericos del Repository
+** Crear
+1) Registro Maestro 
+2) Compra (Parte de registro maestro)
+3) Contabilidad (Parte de registro maestro)
+4) Foto (Parte de registro maestro)
+5) Inventario (Parte de registro maestro)
+6) Pedimento (Parte de registro maestro)
+7) Venta (Parte de registro maestro)
+8) Persona Fiscal (Necesita asignacion de cuenta contable) Solo asociado a Persona fiscal (Cliente o Proveedor)
+9) Proveedor (Para personas fiscales del tipo proveedor)
+10) Presentacion
+11) Clasificacion
+12) Unidad de Medida
+13) Documento
+14) Proveedor Registro Maestro Compra (Para documentos de recepcion de mercancias)
+15) Agrupador
+*** Reglas
++ Los datos para crear el registro seran dados y validados por las capas superiores por lo que no se haran validaciones en este punto, solo se recibiran y se pasaran al modelo.
++ Considero que una validacion a aplicarse al nivel de la capa de datos es que se verifique que el nuevo registro a crearse no genere un duplicado con respecto a un registro anterior (activo o inactivo)
+  
+** Actualizar / Cambio de Estatus (Borrado Logico)
+1) Registro Maestro 
+2) Compra (Parte de registro maestro)
+3) Contabilidad (Parte de registro maestro)
+4) Foto (Parte de registro maestro)
+5) Inventario (Parte de registro maestro)
+6) Pedimento (Parte de registro maestro)
+7) Venta (Parte de registro maestro)
+8) Persona Fiscal (Necesita asignacion de cuenta contable)
+9) Proveedor (Para personas fiscales del tipo proveedor)
+10) Presentacion
+11) Clasificacion
+12) Unidad de Medida
+13) Documento
+14) Proveedor Registro Maestro Compra (Para documentos de recepcion de mercancias)
+15) Agrupador
+*** Reglas
++ En el cambio de estatus, impedir la operacion si existen registros activos asociados a la entidad a desactivar
++ Considero que una validacion a aplicarse al nivel de la capa de datos es que se verifique que el nuevo registro a actualizarce no genere un duplicado con respecto a un registro anterior (activo o inactivo)  
+** SP
+- Calcular punto de reorden (asincrono)
+- Flujo de Almacen (asincrono)
+- Flujo de Caja (asincrono)
+- Flujo de Banco (asincrono)
+  
+** Configuracion
+1. Usuario
+2. Ubicacion Fisica
+3. Detalle Ubicacion Fisica
+4. Perfil de Impuestos
+5. Numeracion Folio
+6. Monto Calculado
+7. Libro Sucursal
+8. Libro Contable
+9. Empleado??
+10. Documento Movimiento (Solo lectura)
+11. Documento Concepto
+12. Documento Asiento
+13. Cuenta Contable
+14. Clave Folio
+15. Asiento Contable
+*** Reglas
+| Entidad             | Docs Closed | Otros                                                                                     |
+| Usuario             | X           | A manejarse por medio del modulo de Admin del famework                                    |
+| Ubicacion fisica    | X           | Cada registro crea subcuenta contable. Tipos Primarios: Almacen, Caja                     |
+| Perfil de Impuestos | X           | Docs asociados al registro maestro                                                        |
+| Numeracion Folio    | X           | solo una numeracion asociada a cada clave de folio                                        |
+| Monto Calculado     | X           | Refierase a teoria de montos calculados                                                   |
+| Libro Sucursal      |             | Se crea un registro con nuevo Libro Contable. trigger?                                    |
+| Libro Contable      |             | Se crea un nuevo registro al cambio de anio, no exiten acciones del usuario               |
+| Concepto            | X           | Concepto tiene un Documento. El documento uno o mas conceptos. Es implicito el movimiento |
+| Movimiento          |             | 1=Ingreso, 2=Egreso                                                                       |
+| Documento Asiento   | X           | Relacion entre el Tipo Doc, *Concepto, Movimiento y Asiento*                              |
+| Cuenta Contable     | X           | Los tipos primarios de Ubicacion y Persona deberan ser hardcoded. No editable             |
+| Clave Folio         | X           | Solo uno activo por Tipo de Documento, los documentos son hardcoded                       |
+| Asiento Contable    | X           | Asociado a Cuentas Contables Primarias                                                    |
+
+** Consultar (lista no exahustiva - Es mas conveniente crear metodos conforme sean necesitados en la capa de negocio)
+- Consultar Categorias de Registros Maestros
+- Consultar Registros Maestros en funcion de su Categoria
+- Consultar si hay existencias suficientes de mercancias en los almacenes de una sucursal para poder satisfacer una orden
+- Consultar movimientos del almacen con distintos filtros
+- Consultar movimientos en un rango de dias, con distintos filtros para una cuenta contable dada (exportable a distintos formatos?)
+- Consulta movimientos de Banco con distintos filtros
+- Consulta de movimientos de caja con distintos filtros
+- Consultar para una sucursal dado, los registros maestros asociados, sus existencias actuales y ubicacion. Filtrado por almancen
+- Consulta de las existencias de un platillo dado en funcion de las cantidades de registros maestros en una sucursal. Filtrado por almacen
+- Calculo del costo aproximado de un platillo en funcion de las mercancias y cantidades seleccionadas segun el metodo de valuacion configurado

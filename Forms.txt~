@@ -1,0 +1,10 @@
+Forms
+-*-*-*-*-*-*-*-*-*-*-*-*-*-
+- Caja
+  - Registro de Pagos por Ventas
+  - Corte de Caja
+      - Cerrar Caja
+      - Registro de la diferencia entre lo contabilizado y el saldo de caja
+      - Autorizacion del registro de diferencias
+      - Asignacion de nuevo cajero e ingreso de saldo inicial
+      - Reapertura de Caja

@@ -1,0 +1,45 @@
+CREATE OR REPLACE FUNCTION crear_documentoprueba()
+  RETURNS int AS
+$BODY$
+
+DECLARE
+	    tipodocumento text;
+	    id_usuario int;
+	    monto numeric;
+	    id_documentoorigen int;
+	    conceptodocumento text;
+	    foliointerno text;
+	    documentomovimiento text;
+	    id_registromaestro int;
+	    id_personafiscal int;
+
+	    id_registromaestro int;
+	    id_personafiscal int;
+    	    id_ubicacionfisica1	int;
+    	    id_ubicacionfisica2 int;
+    	    subtotal numeric;
+    	    id_cuentabancaria1 int;
+    	    id_cuentabancaria2 int;
+
+BEGIN
+--El propósito de esta funcion es la de generar documentos de prueba.	
+--Parámetros de prueba para la tabla de Documento
+    tipodocumento	 := 'Flujo_Almacen';
+    id_usuario   	 := 1;
+    monto        	 := 0;
+    id_documentoorigen   := 0;
+    conceptodocumento	 := 'Recepcion de Mercancias';
+    foliointerno	 := '';
+    documentomovimiento	 := 'Entrada';
+
+--Parámetros de prueba para la tabla de Detalle_Documento
+    id_registromaestro 	 := 1;
+    id_personafiscal	 := 1;	-- No se tomara en cuenta para documentos que impliquen operaciones entre almacenes
+    id_ubicacionfisica1	 := 1;	-- Contendra valor cuando se trate de entrada a la ubicacion fisica
+    id_ubicacionfisica2  := 2;	-- Contendra valor cuando se trate de salida de la ubicacion fisica 
+    subtotal		 := 0;
+    id_cuentabancaria1	 := 1;	-- Contendra valor cuando se trate de entrada a la cuenta bancaria
+    id_cuentabancaria2   := 2;	-- Contendra valor cuando se trate de salida de la cuenta bancaria 
+
+END;
+$$ LANGUAGE PLPGSQL;
