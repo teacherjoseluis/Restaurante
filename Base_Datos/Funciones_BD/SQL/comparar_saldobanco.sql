@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION comparar_saldobanco(id_cuentabancaria int, cantidad numeric)
+﻿CREATE OR REPLACE FUNCTION comparar_saldobanco(id_cuentabancaria int, cantidad numeric)
 RETURNS boolean AS $$
 
 DECLARE

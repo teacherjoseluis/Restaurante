@@ -1,11 +1,10 @@
-CREATE OR REPLACE FUNCTION aplicar_movimientocaja(id_documento int)
+﻿CREATE OR REPLACE FUNCTION aplicar_movimientocaja(id_documento int)
 RETURNS void AS $$
 
 DECLARE
 	CajaEstatus varchar(1);
 	id_clavefolio int;
 	id_usuario int;
-	id_ubicacionfisica int;
 	id_movimiento int;
 	id_concepto int;
 	id_sucursal int;
@@ -24,12 +23,12 @@ DECLARE
 	
 BEGIN
     -- 1. Se consulta del documento dado como parametro el Concepto y el Movimiento - Id_Concepto, Id_Movimiento(Entrada)
-    EXECUTE 'SELECT "Documento"."Id_ClaveFolio", "Documento"."Id_Usuario", "Detalle_Documento"."Id_PersonaFiscal", "Detalle_Documento"."Id_UbicacionFisica1", "Detalle_Documento"."Id_UbicacionFisica2", "Detalle_Documento"."Subtotal" FROM "Documento" INNER JOIN "Detalle_Documento" ON "Documento"."ID" = "Detalle_Documento"."Id_Documento" WHERE "ID" =' || id_documento INTO id_clavefolio, id_usuario,  id_personafiscal, id_ubicacionfisica1, id_ubicacionfisica2, subtotal, id_concepto;
+    EXECUTE 'SELECT "Documento"."Id_ClaveFolio", "Documento"."Id_Usuario", "Documento"."Id_ConceptoDocumento", "Detalle_Documento"."Id_PersonaFiscal", "Detalle_Documento"."Id_UbicacionFisica1", "Detalle_Documento"."Id_UbicacionFisica2", "Detalle_Documento"."Subtotal" FROM "Documento" INNER JOIN "Detalle_Documento" ON "Documento"."ID" = "Detalle_Documento"."Id_Documento" WHERE "Documento"."ID" =' || id_documento INTO id_clavefolio, id_usuario, id_concepto, id_personafiscal, id_ubicacionfisica1, id_ubicacionfisica2, subtotal;
+
+    EXECUTE 'SELECT "Id_Movimiento" FROM "Documento_Concepto" WHERE "ID"='|| id_concepto INTO id_movimiento;
+    
     -- 2. Del documento origen, tomando como base la informacion de Id_ClaveFolio, extrae Id_Sucursal
     EXECUTE 'SELECT "Id_Sucursal" FROM "Numeracion_Folio" WHERE "Id_ClaveFolio" = ' || id_clavefolio INTO id_sucursal;
-
-    -- Revisando el tipo de movimiento asociado al concepto
-    EXECUTE 'SELECT "Id_Movimiento" FROM "Documento_Concepto" WHERE "ID"=' || id_concepto INTO id_movimiento;
 
     IF id_movimiento = 1 THEN --Ingreso
        id_ubicacionfisica := id_ubicacionfisica1;

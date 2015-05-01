@@ -22,8 +22,10 @@ DECLARE
   
 BEGIN
   EXECUTE 'SELECT "ID_Cliente", "IdentificadorCorto" FROM "Sucursal_Sistema" WHERE "ID" =' || id_sucursal INTO id_cliente, idcorto;
-  EXECUTE 'SELECT "ID", "ClaveFolio" FROM "Clave_Folio" WHERE "NombreDocumento" =''' || nombredocumento ||''' AND "Id_ClienteSistema" = ' || id_cliente INTO idclavefolio, clave_folio;
+  EXECUTE 'SELECT "ID", "ClaveFolio" FROM "Clave_Folio" WHERE "NombreDocumento" ='''||nombredocumento||''' AND "Id_ClienteSistema" = ' || id_cliente INTO idclavefolio, clave_folio;
+raise info '% %', idclavefolio, clave_folio;
   EXECUTE 'SELECT MAX("ID") FROM "Numeracion_Folio" WHERE "Id_ClaveFolio" =' || idclavefolio ||' AND "Id_Sucursal_Sistema" = ' || id_sucursal INTO max_folio;
+raise info 'hola mundo2';
   EXECUTE 'SELECT "NumeroActual", "NumeroFinal" FROM "Numeracion_Folio" WHERE "ID" = '|| max_folio INTO numeroactual, numerofinal;
    
   IF numeroactual > numerofinal THEN
