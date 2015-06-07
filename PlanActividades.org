@@ -32,27 +32,23 @@ Que se debe implementar la funcionalidad de conversion de unidades de medida en 
 
 * Tareas del sistema
 ** Base de Datos
-*** DONE [#A] Aplicar cambios de nuevas columnas en la base de datos. <2015-05-01 Fri>
-*** DONE Actualizar procedimientos almacenados de almacenes y crear nuevos procedimientos de Bancos y Caja <2015-05-01 Fri>
+*** TODO [#A] Aplicar cambios de nuevas columnas en la base de datos. <2015-05-01 Fri>
+*** TODO Actualizar procedimientos almacenados de almacenes y crear nuevos procedimientos de Bancos y Caja <2015-05-01 Fri>
 *** TESTING [#B] Procedimientos almacenados en la BD usando funcion de generacion de documentos <2015-05-01 Fri>
-*** DONE DESIGN Trabajar en procedimientos/queries del sistema
+*** DESIGN Trabajar en procedimientos/queries del sistema
     - State "DESIGN"     from "ANALISYS"   [2015-04-22 Wed 10:20]
-*** DONE INVESTIGATE Implementacion de los procedimientos pertinentes para loggear excepciones en la base de datos. [[http://stackoverflow.com/questions/722221/how-to-log-postgresql-queries][stackoverflow postgresql log]] <2015-05-01 Fri>
-    Aparentemente ya quedo, modificando el archivo de configuracion y todas las acciones sobre la BD quedaran registradas en el log contenido en pg_log
-*** DONE Aplicar cambios hechos el [2015-04-28 Tue] a la BD de Access a la BD de Postgresql. <2015-05-01 Fri>
+*** INVESTIGATE Implementacion de los procedimientos pertinentes para loggear excepciones en la base de datos. [[http://stackoverflow.com/questions/722221/how-to-log-postgresql-queries][stackoverflow postgresql log]] <2015-05-01 Fri>
+*** TODO Aplicar cambios hechos el [2015-04-28 Tue] a la BD de Access a la BD de Postgresql. <2015-05-01 Fri>
 
 ** Preparacion del ambiente de desarrollo
 De momento estoy pensando montar el servidor sobre el mismo ambiente en donde tengo la base de datos para propositos de facilidad y agilizar el proceso. Sin embargo, llegara el momento en donde tenga que probar conectividad entre ambientes distintos por lo que considerare implementar un servidor de pruebas en una maquina virtual de alguna distro Linux [2015-04-22 Wed]
 *** INVESTIGATE Utilizacion de Emacs junto con Python como IDE a fin de empezar a codificar algunas clases aunque no se corran <2015-05-11 Mon>. [[http://www.jesshamrick.com/2012/09/18/emacs-as-a-python-ide/][emacs como IDE,]] [[http://stackoverflow.com/questions/10241279/how-do-i-run-a-python-interpreter-in-emacs][emacs IDE stackoverflow]]
-- Voy a usar pycharm sobre Windows como my entorno de desarrollo
-*** DONE [#B] Instalar *DJANGO* y generar modelo con /InspectDB/ <2015-05-02 Sat>
+*** TODO [#B] Instalar *DJANGO* y generar modelo con /InspectDB/ <2015-05-02 Sat>
 [[http://www.djangobook.com/en/2.0/chapter18.html][django model]]
-*** DONE INVESTIGATE [#A] Instalacion de Apache como Application Server a fin de usar DJANGO <2015-05-02 Sat>
-    [[http://www.webforefront.com/django/setupapachewebserverwsgi.html][apache web server]]
-- Estoy usango nginx y gunicorn como servidor en un entorno linux (Debian)
-*** DONE INVESTIGATE [#B] Gestionar Dropbox como repositorio del codigo que vaya generando junto con Git: <2015-05-04 Mon>. [[http://www.looselytyped.net/2013/09/27/super-easy-source-control-using-git-and-dropbox-together/][link de la pagina]]
-- Estoy usando directamente la coneccion con Github como repositorio de documentacion y codigo
-*** DONE INVESTIGATE Otra opcion al respecto es manejar Github para lo cual ya he creado un proyecto. Este es un cheatsheet de los comandos basicos de git [[https://techbase.kde.org/images.techbase/2/2f/Zrusin-git-cheat-sheet-medium.png][link ]]<2015-05-02 Sat>
+*** INVESTIGATE [#A] Instalacion de Apache como Application Server a fin de usar DJANGO <2015-05-02 Sat>
+[[http://www.webforefront.com/django/setupapachewebserverwsgi.html][apache web server]]
+*** INVESTIGATE [#B] Gestionar Dropbox como repositorio del codigo que vaya generando junto con Git: <2015-05-04 Mon>. [[http://www.looselytyped.net/2013/09/27/super-easy-source-control-using-git-and-dropbox-together/][link de la pagina]]
+*** INVESTIGATE Otra opcion al respecto es manejar Github para lo cual ya he creado un proyecto. Este es un cheatsheet de los comandos basicos de git [[https://techbase.kde.org/images.techbase/2/2f/Zrusin-git-cheat-sheet-medium.png][link ]]<2015-05-02 Sat>
 
 
 * Planes a futuro
@@ -75,4 +71,4 @@ Llegara un punto en donde la BD actualmente en Windows sea trasladada a mi Lapto
   + Movimiento Contable :: Se removera la relacion con Asiento Contable y se establecera con Documento Concepto
   + Documento :: Se removera su relacion con Id_Movimiento
 - Lo que se intenta lograr con este cambio es dar mas consistencia y logica a las relaciones asi como facilitar el proceso de captura de la informacion contable. El usuario final solamente tendra que crear un concepto el cual tiene que asociar al documento en el que se mostrara y las cuentas contables que seran afectadas, en este punto se pueden limitar las cuentas contables por el tipo de documento del que se trate. Los procesos en base de datos se reducen en complejidad.
-** DONE Hacer un mapeo entre las entidades de la capa de datos y el patron de disenio que hay que aplicar <2015-04-29 Wed>
+** TODO Hacer un mapeo entre las entidades de la capa de datos y el patron de disenio que hay que aplicar <2015-04-29 Wed>
