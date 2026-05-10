@@ -40,6 +40,21 @@ ROOT_URLCONF = "restaurante.urls"
 WSGI_APPLICATION = "restaurante.wsgi.application"
 ASGI_APPLICATION = "restaurante.asgi.application"
 
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
 DATABASES = {
     "default": {
         "ENGINE": os.environ.get("DJANGO_DB_ENGINE", "django.db.backends.sqlite3"),
